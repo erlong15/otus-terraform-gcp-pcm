@@ -1,0 +1,34 @@
+{% set ns = namespace(hosts_str=" ") %}
+{% for hosts in groups['all'] %}
+{% if loop.first %}
+{% set ns.hosts_str = hosts %}
+{% elif loop.last %}
+{% set ns.hosts_str = ns.hosts_str + " " + hosts %}
+{% else %}
+{% set ns.hosts_str = ns.hosts_str + " " + hosts %}
+{% endif %}
+{% endfor %}
+{% for disk in drbd %}
+resource {{ disk['resource'] }} {
+  protocol C;
+  device {{ disk['device'] }};
+  disk {{ disk['disk'] }};
+  meta-disk internal;
+{%   for host in groups['all'] %}
+  on {{ hostvars[host]['inventory_hostname_short'] }} {
+    node-id {{ loop.index }};
+    address {{ hostvars[host]['ansible_eth0']['ipv4']['address'] }}:7788;
+  }
+{%   endfor %}
+  connection-mesh {
+    hosts {{ ns.hosts_str }};
+    net {
+      use-rle yes;
+      csums-alg sha1;
+      data-integrity-alg sha1;
+    }
+  }
+}
+{% endfor %}
+
+

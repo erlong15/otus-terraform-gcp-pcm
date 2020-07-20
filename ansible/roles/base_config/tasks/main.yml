@@ -1,0 +1,119 @@
+---
+- meta: end_play
+  when: (ansible_distribution != "CentOS" and ansible_distribution_major_version != "7")
+
+#- name: "List all known variables and facts"
+#  debug:
+#    var: hostvars[inventory_hostname]
+
+#- name: "List all known variables and facts to /tmp/dump"
+#  template:
+#    src: dump.j2
+#    dest: /tmp/dump
+
+- name: "Install epel-release"
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - epel-release
+
+- name: "Set timezone"
+  timezone:
+    name: "{{ ntp_timezone }}"
+
+- name: "Force timesync with chrony"
+  shell: "chronyc -a makestep"
+
+- name: "Install additional packages"
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - python2-cryptography
+    - setools-console
+    - libsemanage-python
+    - policycoreutils-python
+    - python2-pip
+    - google-cloud-sdk
+
+- name: "Upgrade pip"
+  pip: 
+    name: pip
+    state: latest
+    executable: pip
+
+- name: "Upgrade pip locally"
+  become: false
+  local_action:
+    module: pip
+    name: pip
+    state: latest
+    executable: pip
+
+- name: "Install python modules"
+  pip:
+    name: "{{ packages }}"
+    state: latest
+    executable: pip
+  vars:
+    packages:
+    - "pyasn1"
+    - "pyasn1_modules"
+    - "google.auth"
+    - "google-auth-httplib2"
+    - "jinja2"
+
+- name: "Install python modules locally"
+  become: false
+  local_action:
+    module: pip
+    name: "{{ packages }}"
+    state: latest
+    executable: pip
+  vars:
+    packages:
+    - "jinja2"
+
+- name: "Create GCloud directory"
+  file:
+    path: "/root/.config/gcloud/"
+    recurse: yes
+    state: directory
+
+- name: "Copy credentials to the node"
+  copy:
+    src: "{{ gcloud_service_account_file }}"
+    dest: "{{ os_environment[0].value }}" # The first value in list
+    owner: root
+    group: root
+    mode: 0755
+    backup: yes
+
+- name: "Populate /etc/environment"
+  lineinfile:
+    dest: "/etc/environment"
+    state: present
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+  with_items: "{{ os_environment }}"
+
+# It doesn't need because GCP do it itself
+#- name: Set hostname
+#  hostname: 
+#    name: "{{ ansible_hostname }}.{{ domain }}"
+
+# It doesn't need because GCP do it itself
+#- name: Set hosts
+#  template:
+#    src: "hosts.j2"
+#    dest: "/etc/hosts"
+
+- name: "Enable and start firewalld"
+  systemd:
+    name: firewalld
+    state: started
+    enabled: true
+...

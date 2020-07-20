@@ -1,31 +1,34 @@
-
-
-variable region {
-  description = "Region"
+variable "region" {
+  description = "GCP - Region"
   default     = "europe-north1"
 }
 
-variable zone {
-  description = "Application zone"
+variable "zone" {
+  description = "GCP - Application zone"
   default     = "europe-north1-a"
 }
 
-variable cred_file_path {
-  description = "Credentials for GCP"
+variable "cred_file_path" {
+  description = "GCP - Credentials"
 }
 
-variable project {
-  description = "Project name"
-}
-
-variable "public_key_path" {
-  description = "Public key"
+variable "project" {
+  description = "GCP - Project name"
 }
 
 variable "disk_image" {
-  description = "Disk iamge "
+  description = "GCP - Disk image"
+}
+
+variable "public_key_path" {
+  description = "Public key path"
 }
 
 variable "private_key_path" {
-  description = "private key path"
+  description = "Private key path"
+}
+
+variable "node_count" {
+  description = "Node count"
+  default = "3"
 }

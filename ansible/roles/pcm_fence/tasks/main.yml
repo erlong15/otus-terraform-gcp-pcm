@@ -1,0 +1,23 @@
+---
+- name: Check for replay (/opt/pcs_fence_config_done exists)
+  stat:
+    path: /opt/pcs_fence_config_done
+  register: pcs_fence_config_done
+
+- name: Configure fencing
+  command: "{{ item }}"
+  with_items:
+    - "pcs stonith create fence_dev fence_gce_fixed zone={{ zone }} project={{ project }} pcmk_reboot_action=off"
+  when:
+    - pcs_fence_config_done.stat.exists != True
+
+- name: Set replay protection (/opt/pcs_fence_config_done)
+  file:
+    path: /opt/pcs_fence_config_done
+    state: touch
+    owner: root
+    group: root
+    mode: '0744'
+  when:
+    - pcs_fence_config_done.stat.exists != True
+...

@@ -1,0 +1,64 @@
+---
+- name: pre tasks
+  tags: pre_tasks
+  hosts: all
+  pre_tasks:
+  - name: Make string with nodes from hostgroups
+    set_fact:
+      nodelist: "{{ nodelist }}{{ item }} "
+    with_items: "{{ groups.all }}"
+
+- name: hosts prepare
+  tags: base
+  hosts: all
+  become: true
+  roles:
+    - base_config
+
+- name: cluster install
+  tags: pcm_install
+  hosts:
+    - "pcm-stand-0"
+    - "pcm-stand-1"
+    - "pcm-stand-2"
+  become: true
+  roles:
+    - pcm_install
+
+- name: cluster config
+  tags: pcm_config
+  hosts: "pcm-stand-0"
+  become: true
+  roles:
+    - pcm_config
+    - pcm_fence
+
+- name: drbd install
+  tags: drbd_install
+  hosts:
+    - "pcm-stand-0"
+    - "pcm-stand-1"
+    - "pcm-stand-2"
+  become: true
+  roles:
+    - drbd_install
+
+- name: nginx install
+  tags: nginx_install
+  hosts:
+    - "pcm-stand-0"
+    - "pcm-stand-1"
+    - "pcm-stand-2"
+  become: true
+  roles:
+    - nginx_install
+    - nginx_config
+
+- name: cluster config 2
+  tags: pcm_config2
+  hosts: "pcm-stand-0"
+  become: true
+  roles:
+    - pcm_config2
+    - nginx_site
+...
