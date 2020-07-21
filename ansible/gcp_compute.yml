@@ -1,0 +1,18 @@
+---
+# need to install pip modules for python before: google-auth, requests
+plugin: gcp_compute
+projects:
+  - "otus-gcp-pcm-278116"
+regions:
+  - "europe-north1"
+zones:
+  - "europe-north1-a"
+filters: []
+auth_kind: serviceaccount
+service_account_file: "~/.ssh/otus-gcp-pcm-278116-dc3abd5ac9a9.json"
+hostnames:
+  - name
+compose:
+  ansible_host: networkInterfaces[0].accessConfigs[0].natIP
+  internal_ip: networkInterfaces[0].networkIP
+...

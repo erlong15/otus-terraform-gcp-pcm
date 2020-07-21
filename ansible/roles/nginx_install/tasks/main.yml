@@ -1,0 +1,26 @@
+---
+- meta: end_play
+  when: (ansible_distribution != "CentOS" and ansible_distribution_major_version != "7")
+
+- name: Install epel-release
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - epel-release
+
+- name: Install nginx
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - nginx
+
+- name: Disable nginx in systemd
+  systemd:
+    name: nginx.service
+    state: stopped
+    enabled: no
+...

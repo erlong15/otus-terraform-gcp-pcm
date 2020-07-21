@@ -1,0 +1,39 @@
+---
+- name: Configuring cluster (step 1)
+  command: "{{ item }}"
+  with_items:
+    - " pcs cluster auth {{ nodelist }} -u hacluster -p {{ pcm_password }}"
+  no_log: true
+  
+- name: Check for replay (/opt/pcs_config_done exists)
+  stat:
+    path: /opt/pcs_config_done
+  register: pcs_config_done
+
+- name: Configuring cluster (step 2)
+  command: "{{ item }}"
+  with_items:
+    - "pcs cluster setup --name {{ cluster_name }} {{ nodelist }}"
+  when:
+    - pcs_config_done.stat.exists != True
+
+- name: Set replay protection (/opt/pcs_config_done)
+  file:
+    path: /opt/pcs_config_done
+    state: touch
+    owner: root
+    group: root
+    mode: '0744'
+  when:
+    - pcs_config_done.stat.exists != True
+
+- name: Configuring cluster (step 3)
+  command: "{{ item }}"
+  with_items:
+    - "pcs cluster enable --all"
+    - "pcs cluster start --all"
+
+- name: Wait a bit
+  pause:
+    seconds: 10
+...

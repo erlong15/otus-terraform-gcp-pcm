@@ -1,0 +1,40 @@
+---
+- name: Check for replay (/opt/pcs_config2_done exists)
+  stat:
+    path: /opt/pcs_config2_done
+  register: pcs_config2_done
+
+- name: Configuring cluster (step 4)
+  command: "{{ item }}"
+  with_items:
+    - "pcs cluster cib tmp_cfg"
+    - "pcs -f tmp_cfg resource defaults resource-stickiness=100"
+    - "pcs -f tmp_cfg resource op defaults timeout=10s"
+    - "pcs -f tmp_cfg resource create DRBD ocf:linbit:drbd drbd_resource={{ drbd[0].resource }} op monitor interval=10s"
+    - "pcs -f tmp_cfg resource master DRBDClone DRBD master-max=1 master-node-max=1 clone-node-max=1 notify=true"
+    - "pcs -f tmp_cfg resource create DRBDMount Filesystem device={{ drbd[0].device }} directory={{ drbd[0].mountpoint }} fstype=xfs"
+    - "pcs -f tmp_cfg constraint colocation add DRBDMount with DRBDClone INFINITY with-rsc-role=Master"
+    - "pcs -f tmp_cfg constraint order promote DRBDClone then start DRBDMount"
+    - "pcs -f tmp_cfg resource create SecondaryIP ocf:heartbeat:IPaddr2 nic={{ ansible_default_ipv4.interface }} ip={{ gcp_vip }} cidr_netmask=32"
+    - "pcs -f tmp_cfg constraint colocation add SecondaryIP with DRBDClone INFINITY with-rsc-role=Master"
+    - "pcs -f tmp_cfg constraint order promote DRBDClone then start SecondaryIP"
+    - "pcs -f tmp_cfg resource create NGINX ocf:heartbeat:nginx configfile={{ path_to_nginx_config }} op monitor interval=5s timeout=20s"
+    - "pcs -f tmp_cfg constraint colocation add NGINX with DRBDClone INFINITY with-rsc-role=Master"
+    - "pcs -f tmp_cfg constraint order start SecondaryIP then start NGINX"
+    - "pcs -f tmp_cfg resource create GCPSecondaryIP ocf:heartbeat:gcp-vpc-move-vip-fixed alias_ip={{ gcp_vip }}/32 alias_range_name=external stackdriver_logging=false hostlist=\"{{ nodelist }}\" op monitor interval=5s timeout=20s"
+    - "pcs -f tmp_cfg constraint colocation add GCPSecondaryIP with SecondaryIP"
+    - "pcs -f tmp_cfg constraint order start SecondaryIP then start GCPSecondaryIP"
+    - "pcs cluster cib-push tmp_cfg --config"
+  when:
+    - pcs_config2_done.stat.exists != True
+
+- name: Set replay protection (/opt/pcs_config2_done)
+  file:
+    path: /opt/pcs_config2_done
+    state: touch
+    owner: root
+    group: root
+    mode: '0744'
+  when:
+    - pcs_config2_done.stat.exists != True
+...

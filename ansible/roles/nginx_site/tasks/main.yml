@@ -1,0 +1,11 @@
+---
+- name: Provision index.html
+  template:
+    backup: true
+    owner: root
+    group: root
+    mode: '0744'
+    src: "index.html.j2"
+    dest: "{{ item.mountpoint }}/index.html"
+  loop: "{{ drbd }}"
+...

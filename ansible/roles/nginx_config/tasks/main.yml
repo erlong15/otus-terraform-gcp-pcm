@@ -1,0 +1,11 @@
+---
+- name: Provision nginx.conf
+  template:
+    backup: true
+    owner: root
+    group: root
+    mode: '0744'
+    src: "nginx.conf.j2"
+    dest: "{{ path_to_nginx_config }}"
+  loop: "{{ drbd }}"
+...

@@ -1,0 +1,26 @@
+---
+# GCP
+zone: "europe-north1-a"
+project: "otus-gcp-pcm-278116"
+gcp_vip: "10.0.1.2" # IP from secondary range
+# local credentials
+ansible_private_key_file: "~/.ssh/id_rsa"
+gcloud_service_account_file: "~/.ssh/otus-gcp-pcm-278116-dc3abd5ac9a9.json"
+# target's OS environment and parameters
+os_environment:
+  - key: "GOOGLE_APPLICATION_CREDENTIALS" # First env mandatory!
+    value : "/gcloud_service_account.json" 
+ntp_timezone: "UTC"
+# Pacemaker
+cluster_name: "hacluster"
+pcm_password: "strong_pass" # cluster user: hacluster
+nodelist: ""
+# DRBD
+drbd:
+  - device: "/dev/drbd1"
+    resource: "r1"
+    disk: "/dev/sdb"
+    mountpoint: "/mnt/drbd_r1"
+# NGINX
+path_to_nginx_config: "/etc/nginx/nginx.conf"
+...
