@@ -5,6 +5,7 @@
 pip install google-auth
 pip install requests
 ```
+- Change variables in **ansible/gcp_compute.yml** and **ansible/group_vars/all.yml**
 - Run the following commands:
 ```bash
 terraform init
