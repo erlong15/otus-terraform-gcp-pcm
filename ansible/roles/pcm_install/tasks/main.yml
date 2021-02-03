@@ -2,6 +2,208 @@
 - meta: end_play
   when: (ansible_distribution != "CentOS" and ansible_distribution_major_version != "7")
 
+#
+#- name: Copy fence_gce_fixed to system
+#  copy:
+#    src: "fence_gce.py"
+#    dest: "/usr/sbin/fence_gce_fixed"
+#    owner: root
+#    group: root
+#    mode: 0755
+#
+#- name: Copy gcp-vpc-move-vip-fixed to system
+#  copy:
+#    src: "gcp-vpc-move-vip-fixed2.py"
+#    dest: "/usr/lib/ocf/resource.d/heartbeat/gcp-vpc-move-vip-fixed"
+#    owner: root
+#    group: root
+#    mode: 0755
+
+- name: Install components for building
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - git
+    - autoconf
+    - automake
+    - libtool
+    - gcc
+    - docbook-style-xsl
+    - glib2
+    - glib2-devel
+    - unzip
+    - libxslt
+    - python2-oauth2client
+    - python2-google-api-client
+    - python2-google-auth
+    - python2-pyroute2
+
+- name: Check for replay (/opt/pcs_resource_install_done exists)
+  stat:
+    path: /opt/pcs_resource_install_done
+  register: pcs_resource_install_done
+
+- name: Clean old build directory (/root/resource-agents)
+  file:
+    path: /root/resource-agents-4.7.0
+    state: absent
+    force: yes
+  when:
+    - pcs_resource_install_done.stat.exists != True
+
+- name: Create build directory (/root/resource-agents)
+  file:
+    path: /root/resource-agents-4.7.0
+    state: directory
+    force: yes
+  when:
+    - pcs_resource_install_done.stat.exists != True
+
+#- name: Clone resource-agents from git to /root/resource-agents
+#  git:
+#    repo: 'https://github.com/ClusterLabs/resource-agents.git'
+#    dest: /root/resource-agents/
+#    clone: yes
+#  when:
+#    - pcs_resource_install_done.stat.exists != True
+
+- name: "Download and unzip resource-agents"
+  unarchive:
+    src: "https://github.com/ClusterLabs/resource-agents/archive/v4.7.0.zip"
+    dest: "/root"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+    remote_src: true
+  when:
+    - pcs_resource_install_done.stat.exists != True
+
+- name: Run pre-build scripts from /root/resource-agents
+  command: "{{ item }}"
+  args:
+    chdir: /root/resource-agents-4.7.0/
+  with_items:
+    - "/root/resource-agents-4.7.0/autogen.sh"
+    - "/root/resource-agents-4.7.0/configure"
+  when:
+    - pcs_resource_install_done.stat.exists != True
+
+- name: Build resource-agents
+  make:
+    chdir: /root/resource-agents-4.7.0/
+  when:
+    - pcs_resource_install_done.stat.exists != True
+
+- name: Install resource-agents
+  make:
+    chdir: /root/resource-agents-4.7.0/
+    target: install
+  when:
+    - pcs_resource_install_done.stat.exists != True
+
+- name: Set replay protection (/opt/pcs_resource_install_done)
+  file:
+    path: /opt/pcs_resource_install_done
+    state: touch
+    owner: root
+    group: root
+    mode: '0744'
+  when:
+    - pcs_resource_install_done.stat.exists != True
+
+- name: Install components for building
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - git
+    - autoconf
+    - automake
+    - libtool
+    - gcc
+    - pexpect
+    - python-requests
+    - unzip
+    - python2-oauth2client
+    - python2-google-api-client
+    - python2-google-auth
+
+- name: Check for replay (/opt/pcs_fence_install_done exists)
+  stat:
+    path: /opt/pcs_fence_install_done
+  register: pcs_fence_install_done
+
+- name: Clean old build directory (/root/fence-agents)
+  file:
+    path: /root/fence-agents/
+    state: absent
+    force: yes
+  when:
+    - pcs_fence_install_done.stat.exists != True
+
+- name: Create build directory (/root/fence-agents)
+  file:
+    path: /root/fence-agents/
+    state: directory
+    force: yes
+  when:
+    - pcs_fence_install_done.stat.exists != True
+
+- name: Clone fence-agents from git to /root/fence-agents
+  git:
+    repo: 'https://github.com/ClusterLabs/fence-agents.git'
+    dest: /root/fence-agents/
+    clone: yes
+  when:
+    - pcs_fence_install_done.stat.exists != True
+
+#- name: "Download and unzip fence-agents"
+#  unarchive:
+#    src: "https://github.com/ClusterLabs/fence-agents/archive/v4.7.0.zip"
+#    dest: "/root"
+#    owner: "root"
+#    group: "root"
+#    mode: "0755"
+#    remote_src: true
+#  when:
+#    - pcs_fence_install_done.stat.exists != True
+
+- name: Run pre-build scripts from /root/fence-agents
+  command: "{{ item }}"
+  args:
+    chdir: /root/fence-agents/
+  with_items:
+    - "/root/fence-agents/autogen.sh"
+    - "/root/fence-agents/configure"
+  when:
+    - pcs_fence_install_done.stat.exists != True
+
+- name: Build fence-agents
+  make:
+    chdir: /root/fence-agents/
+  when:
+    - pcs_fence_install_done.stat.exists != True
+
+- name: Install fence-agents
+  make:
+    chdir: /root/fence-agents/
+    target: install
+  when:
+    - pcs_fence_install_done.stat.exists != True
+
+- name: Set replay protection (/opt/pcs_fence_install_done)
+  file:
+    path: /opt/pcs_fence_install_done
+    state: touch
+    owner: root
+    group: root
+    mode: '0744'
+  when:
+    - pcs_fence_install_done.stat.exists != True
+
 - name: Install Pacemaker
   yum:
     name: "{{ packages }}"
@@ -10,26 +212,10 @@
     packages:
     - pcs
     - pacemaker
-    - fence-agents-all
-    - fence-agents-gce
-    - resource-agents
-    - resource-agents-gcp
-
-- name: Copy fence_gce_fixed to system
-  copy:
-    src: "fence_gce.py"
-    dest: "/usr/sbin/fence_gce_fixed"
-    owner: root
-    group: root
-    mode: 0755
-
-- name: Copy gcp-vpc-move-vip-fixed to system
-  copy:
-    src: "gcp-vpc-move-vip-fixed.py"
-    dest: "/usr/lib/ocf/resource.d/heartbeat/gcp-vpc-move-vip-fixed"
-    owner: root
-    group: root
-    mode: 0755
+#    - fence-agents-all
+#    - fence-agents-gce
+#    - resource-agents
+#    - resource-agents-gcp
 
 - name: Set password for local hacluster user
   user:
