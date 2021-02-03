@@ -22,9 +22,9 @@ ansible-playbook ansible/main.yml
 #### Useful commands
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS="/test.json"
-fence_gce --zone=europe-north1-a --project=otus-gcp-pcm -o list -vvv
-fence_gce --zone=europe-north1-a --project=otus-gcp-pcm --plug="pcm-stand-2"
-/usr/sbin/fence_gce_fix --zone=europe-north1-a --project=otus-gcp-pcm -o list -vvv
+fence_gce --zone=europe-north1-a --project=otus-gcp-pcm-278116 --serviceaccount=/gcloud_service_account.json -o list -vvv
+fence_gce --zone=europe-north1-a --project=otus-gcp-pcm-278116 --serviceaccount=/gcloud_service_account.json --plug="pcm-stand-2"
+/usr/sbin/fence_gce --zone=europe-north1-a --project=otus-gcp-pcm-278116 --serviceaccount=/gcloud_service_account.json -o list -vvv
 pcs stonith fence pcm-stand-2
 ```
 
