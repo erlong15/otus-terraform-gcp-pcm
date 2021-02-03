@@ -7,7 +7,7 @@
 - name: Configure fencing
   command: "{{ item }}"
   with_items:
-    - "pcs stonith create fence_dev fence_gce_fixed zone={{ zone }} project={{ project }} pcmk_reboot_action=off"
+    - "pcs stonith create fence_dev fence_gce zone={{ zone }} project={{ project }} serviceaccount={{ os_environment[0].value }} pcmk_reboot_action=off"
   when:
     - pcs_fence_config_done.stat.exists != True
 
