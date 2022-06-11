@@ -21,7 +21,7 @@
     - "pcs -f tmp_cfg resource create NGINX ocf:heartbeat:nginx configfile={{ path_to_nginx_config }} op monitor interval=5s timeout=20s"
     - "pcs -f tmp_cfg constraint colocation add NGINX with DRBDClone INFINITY with-rsc-role=Master"
     - "pcs -f tmp_cfg constraint order start SecondaryIP then start NGINX"
-    - "pcs -f tmp_cfg resource create GCPSecondaryIP ocf:heartbeat:gcp-vpc-move-vip-fixed alias_ip={{ gcp_vip }}/32 alias_range_name=external stackdriver_logging=false hostlist=\"{{ nodelist }}\" op monitor interval=5s timeout=20s"
+    - "pcs -f tmp_cfg resource create GCPSecondaryIP ocf:heartbeat:gcp-vpc-move-vip alias_ip={{ gcp_vip }}/32 alias_range_name=external stackdriver_logging=false hostlist=\"{{ nodelist }}\" op monitor interval=5s timeout=20s"
     - "pcs -f tmp_cfg constraint colocation add GCPSecondaryIP with SecondaryIP"
     - "pcs -f tmp_cfg constraint order start SecondaryIP then start GCPSecondaryIP"
     - "pcs cluster cib-push tmp_cfg --config"
